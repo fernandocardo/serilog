@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AprendendoSerilog.API.Helpers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -50,7 +51,8 @@ namespace AprendendoSerilog.API
                 app.UseHttpsRedirection();
             }
 
-            app.UseSerilogRequestLogging(); // <-- Add this line
+            app.UseSerilogRequestLogging(opts
+                => opts.EnrichDiagnosticContext = LogHelper.EnrichFromRequest);
 
             app.UseRouting();
 
