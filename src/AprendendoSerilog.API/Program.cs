@@ -19,6 +19,8 @@ namespace AprendendoSerilog.API
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
                 .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+                // Filter out ASP.NET Core infrastructre logs that are Information and below
+                .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
                 .Enrich.FromLogContext()
                 .WriteTo.Console()
                 .WriteTo.Seq("http://localhost:5341")
