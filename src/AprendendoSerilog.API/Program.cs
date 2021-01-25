@@ -8,6 +8,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Events;
+using Serilog.Formatting.Compact;
 
 namespace AprendendoSerilog.API
 {
@@ -22,7 +23,7 @@ namespace AprendendoSerilog.API
                 // Filter out ASP.NET Core infrastructre logs that are Information and below
                 .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
                 .Enrich.FromLogContext()
-                .WriteTo.Console()
+                .WriteTo.Console(new RenderedCompactJsonFormatter())
                 .WriteTo.Seq("http://localhost:5341")
                 .CreateLogger();
 
