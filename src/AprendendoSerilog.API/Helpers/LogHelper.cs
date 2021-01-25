@@ -13,7 +13,7 @@ namespace AprendendoSerilog.API.Helpers
 
         private static readonly RecyclableMemoryStreamManager _recyclableMemoryStreamManager = new RecyclableMemoryStreamManager();
 
-        public static void EnrichFromRequest(IDiagnosticContext diagnosticContext, HttpContext httpContext)
+        public static async void EnrichFromRequest(IDiagnosticContext diagnosticContext, HttpContext httpContext)
         {
             var request = httpContext.Request;
 
@@ -22,14 +22,16 @@ namespace AprendendoSerilog.API.Helpers
             diagnosticContext.Set("Protocol", request.Protocol);
             diagnosticContext.Set("Scheme", request.Scheme);
 
+            // Set the content-type of the Response at this point
+            diagnosticContext.Set("ContentType", httpContext.Response.ContentType);
+
             // Only set it if available. You're not sending sensitive data in a querystring right?!
             if (request.QueryString.HasValue)
             {
                 diagnosticContext.Set("QueryString", request.QueryString.Value);
             }
 
-            // Set the content-type of the Response at this point
-            diagnosticContext.Set("ContentType", httpContext.Response.ContentType);
+
 
             // Retrieve the IEndpointFeature selected for the request
             var endpoint = httpContext.GetEndpoint();
@@ -38,27 +40,27 @@ namespace AprendendoSerilog.API.Helpers
                 diagnosticContext.Set("EndpointName", endpoint.DisplayName);
             }
 
-
-            diagnosticContext.Set("Request Body", SerealizarBody(httpContext.Request));
+            diagnosticContext.Set("Request Body", await SerealizarBody(httpContext.Request));
 
 
         }
 
-        private static string SerealizarBody(HttpRequest request)
+        private static async Task<string> SerealizarBody(HttpRequest request)
         {
             request.EnableBuffering();
 
             using var requestStream = _recyclableMemoryStreamManager.GetStream();
-            request.Body.CopyToAsync(requestStream);
+            
+            await request.Body.CopyToAsync(requestStream);
 
 
-            return ReadStreamInChunks(requestStream);
+            return await ReadStreamInChunks(requestStream);
         }
 
 
-        private static string ReadStreamInChunks(Stream stream)
+        private async static Task<string> ReadStreamInChunks(Stream stream)
         {
-            const int readChunkBufferLength = 4096;
+            int readChunkBufferLength = Convert.ToInt32(stream.Length) ;//4096;
 
             stream.Seek(0, SeekOrigin.Begin);
 
@@ -70,7 +72,7 @@ namespace AprendendoSerilog.API.Helpers
 
             do
             {
-                readChunkLength = reader.ReadBlock(readChunk, 0, readChunkBufferLength);
+                readChunkLength = await reader.ReadBlockAsync(readChunk, 0, readChunkBufferLength);
                 textWriter.Write(readChunk, 0, readChunkLength);
             } while (readChunkLength > 0);
 
